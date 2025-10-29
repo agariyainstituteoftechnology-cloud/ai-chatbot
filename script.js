@@ -9,6 +9,16 @@ const chatMessages = document.getElementById("chatMessages");
 const chatInput = document.getElementById("chatInput");
 const sendBtn = document.getElementById("sendBtn");
 const voiceBtn = document.getElementById("voiceBtn");
+const themeBtn = document.getElementById("themeBtn");
+const colorPickerContainer = document.getElementById("colorPickerContainer");
+const closeColorPicker = document.getElementById("closeColorPicker");
+const applyColor = document.getElementById("applyColor");
+const customColor = document.getElementById("customColor");
+const colorOptions = document.querySelectorAll(".color-option");
+const chatbotContainer = document.getElementById("chatbotContainer");
+
+// ✅ Current theme color
+let currentThemeColor = "#6366f1";
 
 // ✅ yahan user ka msg show karne  funcation banaya hai
 function addUserMessage(message) {
@@ -85,7 +95,7 @@ async function sendMessage() {
     // 👇 Yahan 'fetch()' ka use ho raha hai server (ya AI API) ko request bhejne ke liye.
     // Yeh await ke sath likha gaya hai, iska matlab JavaScript yahan rukegi jab tak response nahi aata,
     // lekin background mein dusra code freeze nahi hoga.
-    const response =  fetch(`${GEMINI_API_URL}?key=${API_KEY}`, {
+    const response = await fetch(`${GEMINI_API_URL}?key=${API_KEY}`, {
       method: "POST", // 👈 API ko POST request bheji ja rahi hai (data send karne ke liye)
       headers: { "Content-Type": "application/json" }, // 👈 Bata rahe hain ke hum JSON format mein data bhej rahe hain
       body: JSON.stringify({
@@ -138,7 +148,7 @@ const recognition = SpeechRecognition ? new SpeechRecognition() : null;
 
 if (recognition) {
   recognition.continuous = false; // ✅ Ek message par rok do
-  recognition.lang = "en-Us"; // ✅ Aap chahein to "ur-PK" ya en-US bhi kar sakte hain
+  recognition.lang = "en-US"; // ✅ Aap chahein to "ur-PK" ya en-US bhi kar sakte hain
   recognition.interimResults = false;
 
   // ✅ Voice start hone par button active dikhao
@@ -178,3 +188,130 @@ function speakMessage(message) {
     speechSynthesis.speak(utterance); // jo bi is variable ma hai voice ma batao
   }
 }
+
+// 🎨 Color Picker Functionality
+themeBtn.addEventListener("click", () => {
+  colorPickerContainer.classList.add("active");
+  createOverlay();
+});
+
+closeColorPicker.addEventListener("click", () => {
+  colorPickerContainer.classList.remove("active");
+  removeOverlay();
+});
+
+// Create overlay when color picker is open
+function createOverlay() {
+  const overlay = document.createElement("div");
+  overlay.className = "color-picker-overlay active";
+  overlay.id = "colorPickerOverlay";
+  document.body.appendChild(overlay);
+
+  overlay.addEventListener("click", () => {
+    colorPickerContainer.classList.remove("active");
+    removeOverlay();
+  });
+}
+
+// Remove overlay when color picker is closed
+function removeOverlay() {
+  const overlay = document.getElementById("colorPickerOverlay");
+  if (overlay) {
+    overlay.remove();
+  }
+}
+
+// Color option selection
+colorOptions.forEach((option) => {
+  option.addEventListener("click", () => {
+    // Remove active class from all options
+    colorOptions.forEach((opt) => opt.classList.remove("active"));
+    // Add active class to clicked option
+    option.classList.add("active");
+    // Update custom color input
+    customColor.value = option.dataset.color;
+  });
+});
+
+// Custom color selection
+customColor.addEventListener("input", () => {
+  // Remove active class from all predefined options
+  colorOptions.forEach((opt) => opt.classList.remove("active"));
+});
+
+// Apply selected color theme
+applyColor.addEventListener("click", () => {
+  const selectedColor = customColor.value;
+  applyTheme(selectedColor);
+  colorPickerContainer.classList.remove("active");
+  removeOverlay();
+
+  // Save theme to localStorage
+  localStorage.setItem("chatbotTheme", selectedColor);
+});
+
+// Apply theme function
+function applyTheme(color) {
+  currentThemeColor = color;
+
+  // Update CSS variables
+  document.documentElement.style.setProperty("--theme-color", color);
+
+  // Update header gradient
+  const chatHeader = document.querySelector(".chat-header");
+  chatHeader.style.background = `linear-gradient(135deg, ${color} 0%, ${adjustColor(
+    color,
+    20
+  )} 100%)`;
+
+  // Update buttons
+  const buttons = document.querySelectorAll(".btn, .feature, .apply-btn");
+  buttons.forEach((btn) => {
+    btn.style.background = `linear-gradient(135deg, ${color} 0%, ${adjustColor(
+      color,
+      20
+    )} 100%)`;
+  });
+
+  // Update user messages
+  const userMessages = document.querySelectorAll(".user-message");
+  userMessages.forEach((msg) => {
+    msg.style.background = `linear-gradient(135deg, ${color} 0%, ${adjustColor(
+      color,
+      20
+    )} 100%)`;
+  });
+
+  // Add a bot message about the theme change
+  addBotMessage(`Theme changed to ${color}! 🎨`);
+}
+
+// Helper function to adjust color brightness
+function adjustColor(color, percent) {
+  const num = parseInt(color.replace("#", ""), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = (num >> 16) + amt;
+  const G = ((num >> 8) & 0x00ff) + amt;
+  const B = (num & 0x0000ff) + amt;
+
+  return (
+    "#" +
+    (
+      0x1000000 +
+      (R < 255 ? (R < 1 ? 0 : R) : 255) * 0x10000 +
+      (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 +
+      (B < 255 ? (B < 1 ? 0 : B) : 255)
+    )
+      .toString(16)
+      .slice(1)
+  );
+}
+
+// Load saved theme on page load
+window.addEventListener("DOMContentLoaded", () => {
+  const savedTheme = localStorage.getItem("chatbotTheme");
+  if (savedTheme) {
+    applyTheme(savedTheme);
+    customColor.value = savedTheme;
+  }
+});
