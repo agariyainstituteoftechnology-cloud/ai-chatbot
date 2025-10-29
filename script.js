@@ -85,7 +85,7 @@ async function sendMessage() {
     // 👇 Yahan 'fetch()' ka use ho raha hai server (ya AI API) ko request bhejne ke liye.
     // Yeh await ke sath likha gaya hai, iska matlab JavaScript yahan rukegi jab tak response nahi aata,
     // lekin background mein dusra code freeze nahi hoga.
-    const response = await fetch(`${GEMINI_API_URL}?key=${API_KEY}`, {
+    const response =  fetch(`${GEMINI_API_URL}?key=${API_KEY}`, {
       method: "POST", // 👈 API ko POST request bheji ja rahi hai (data send karne ke liye)
       headers: { "Content-Type": "application/json" }, // 👈 Bata rahe hain ke hum JSON format mein data bhej rahe hain
       body: JSON.stringify({
