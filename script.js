@@ -1,56 +1,102 @@
 // 👇 yahan api key paste ki hai variable ke andar open gemini ai se
 
 const API_KEY = "AIzaSyBVqGpqUNxtTEpsyfors9mQOVqRQLdgXe8";
+// ye variable me humne apni Gemini AI ki API key rakhi hai (authentication ke liye)
+
 const GEMINI_API_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+// ye Gemini AI model ka API endpoint URL hai jahan par hum request bhejenge
 
 // ✅ DOM elements yaha html ke element access kiya hai  .....
 const chatMessages = document.getElementById("chatMessages");
+// ye chat ka main area hai jahan messages dikhte hain
+
 const chatInput = document.getElementById("chatInput");
+// ye input box hai jahan user message likhta hai
+
 const sendBtn = document.getElementById("sendBtn");
+// ye “Send” button hai jisko click karne par message bhejna hai
+
 const chatbotContainer = document.getElementById("chatbotContainer");
+// ye poora chatbot container element hai
+
 const voiceBtn = document.getElementById("voiceBtn");
+// ye mic button hai jo voice input ke liye use hota hai
+
 const themeBtn = document.getElementById("themeBtn");
+// ye theme change karne ka button hai
+
 const colorPickerContainer = document.getElementById("colorPickerContainer");
+// ye color picker ka box hai jo color select karne me madad karta hai
+
 const closeColorPicker = document.getElementById("closeColorPicker");
+// ye close karne wala button hai color picker ke andar
+
 const applyColor = document.getElementById("applyColor");
+// ye button color apply karne ke liye use hota hai
+
 const customColor = document.getElementById("customColor");
+// ye color picker input hai jahan user apna custom color likh sakta hai (hex code)
+
 const colorOptions = document.querySelectorAll(".color-option");
+// ye saare color buttons select karta hai (predefined color options)
 
 // ✅ Current theme color
 let currentThemeColor = "#6366f1";
+// default theme color violet-blue rakha gaya hai
 
 // ✅ yahan user ka msg show karne  funcation banaya hai
 function addUserMessage(message) {
-  const msgDiv = document.createElement("div"); // yaha aik naya div create kiya hai
-  msgDiv.className = "message user-message"; // yaha class add ki hai
+  const msgDiv = document.createElement("div");
+  // aik naya div create kiya gaya jisme user ka message dikhayenge
+
+  msgDiv.className = "message user-message";
+  // message ke design ke liye class assign ki
+
   msgDiv.innerHTML = `                                   
         <div>${message}</div>
         <div class="message-time">${new Date().toLocaleTimeString()}</div>
-    `; //  class ma innerhtml add ki hai
-  chatMessages.appendChild(msgDiv); //yaha hum ne uper banay gay element  ko sturture ma  add kiya hai chat message wali id ke child ma
-  chatMessages.scrollTop = chatMessages.scrollHeight; // yaha hum ne aik property use ki hai
+    `;
+  chatMessages.appendChild(msgDiv);
+  // ye message chat area me add kar diya gaya
+
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  // scroll automatically latest message tak chala jata hai
 }
 
 // ✅ yahan bot ka msg show karne  funcation banaya hai
 function addBotMessage(message) {
-  const msgDiv = document.createElement("div"); // yaha aik naya div create kiya hai
-  msgDiv.className = "message bot-message"; // yaha class add ki hai
+  const msgDiv = document.createElement("div");
+  // naya div create kiya gaya bot ke reply ke liye
+
+  msgDiv.className = "message bot-message";
+  // bot ke liye alag style class lagai
+
   msgDiv.innerHTML = `
         <div>${message}</div>
         <div class="message-time">${new Date().toLocaleTimeString()}</div>
-    `; //  class ma innerhtml add ki hai
-  chatMessages.appendChild(msgDiv); //yaha hum ne uper banay gay element  ko sturture ma  add kiya hai chat message wali id ke child ma
-  chatMessages.scrollTop = chatMessages.scrollHeight; // yaha hum ne aik property use ki hai
+    `;
+  chatMessages.appendChild(msgDiv);
+  // message chat area me add kiya gaya
 
-  speakMessage(message); // 🔊 Bot ka jawab ko boly ga bi voice ma
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  // scroll last message tak move kar diya
+
+  speakMessage(message);
+  // bot ke reply ko voice me bolne ke liye call kiya gaya
 }
 
-// ✅ Typing indicator show/hide       jab user koi message dega to ya typing... indicator dega jab tak aagy se bot reply na karde
+// ✅ Typing indicator show/hide
 function showTyping() {
   const typing = document.createElement("div");
+  // ek naya div banaya jo "Typing..." show karega
+
   typing.className = "message bot-message typing-indicator";
+  // us div ko classes di gaya style aur design ke liye
+
   typing.id = "typing";
+  // unique id di gayi taake baad me remove kar sakein
+
   typing.innerHTML = `
         <span>Typing</span>
         <div class="typing-dots">
@@ -60,113 +106,125 @@ function showTyping() {
         </div>
     `;
   chatMessages.appendChild(typing);
+  // typing dots chat area me show kar diye
+
   chatMessages.scrollTop = chatMessages.scrollHeight;
+  // scroll latest line tak le gaya
 }
-// jab reply aahy ga to ya  funcation  typing.. ko  hide kar dega
 
 function hideTyping() {
   const typing = document.getElementById("typing");
+  // "typing" wala element select kiya
   if (typing) typing.remove();
+  // agar element exist karta hai to use hata diya gaya
 }
 
 // ✅ yaha ab  Gemini API ko call karne   ka funcation hai
-
-// 👇 Ye aik async function hai — iska matlab ye hai ke ye function asynchronous kaam karega (jaise API call),
-// aur 'await' keyword iske andar use ho sakta hai.
 async function sendMessage() {
-  // 👇 'chatInput.value' se user ka likha hua message liya ja raha hai aur trim() se extra spaces hata diye gaye hain.
   const userMessage = chatInput.value.trim();
+  // input box se user ka likha hua text liya aur extra spaces hata diye
 
-  // 👇 Agar user ne kuch likha hi nahi (empty message), to function yahan se return kar jaayega aur aage nahi chalega.
   if (userMessage === "") return;
+  // agar message khali hai to kuch na kare aur return kar jaye
 
-  // 👇 Ye function user ka message chat UI mein dikhata hai (jo banda likh raha hai uska message bubble banata hai).
   addUserMessage(userMessage);
+  // user ke message ko UI me show kar diya
 
-  // 👇 Input box ko khali kar diya jaata hai taake user naya message likh sake.
   chatInput.value = "";
+  // input box ko khali kar diya taake naya likh sake
 
-  // 👇 Ye function screen par "typing..." ka indicator dikhata hai  jab tak bot ka reply nahi aata.
   showTyping();
+  // jab tak bot ka reply nahi aata, typing dots show kar diye
 
-  // 👇 Try-catch ka use error handle karne ke liye hota hai.
-  // Agar beech mein koi error aata hai (jaise internet ka issue), to catch block chalega.
   try {
-    // 👇 Yahan 'fetch()' ka use ho raha hai server (ya AI API) ko request bhejne ke liye.
-    // Yeh await ke sath likha gaya hai, iska matlab JavaScript yahan rukegi jab tak response nahi aata,
-    // lekin background mein dusra code freeze nahi hoga.
     const response = await fetch(`${GEMINI_API_URL}?key=${API_KEY}`, {
-      method: "POST", // 👈 API ko POST request bheji ja rahi hai (data send karne ke liye)
-      headers: { "Content-Type": "application/json" }, // 👈 Bata rahe hain ke hum JSON format mein data bhej rahe hain
+      method: "POST",
+      // API ko POST request bheji gayi
+
+      headers: { "Content-Type": "application/json" },
+      // bata rahe hain ke hum JSON format me data bhej rahe hain
+
       body: JSON.stringify({
-        // 👇 body mein user ka message JSON form mein send ho raha hai
         contents: [
           {
-            parts: [{ text: userMessage }], // 👈 Ye API ke format ke mutabiq data bhej raha hai
+            parts: [{ text: userMessage }],
+            // API ke format ke hisaab se data bheja gaya
           },
         ],
       }),
     });
 
-    // 👇 Jab response aajata hai to use JSON format mein convert kar rahe hain.
     const data = await response.json();
+    // API ka response JSON me convert kiya gaya
 
-    // 👇 Ab jab reply mil gaya, to "typing..." loader hata dete hain.
     hideTyping();
+    // typing indicator hata diya gaya kyunki ab reply mil gaya
 
-    // 👇 API ke response se bot ka reply nikaal rahe hain (agar mil gaya).
-    // Agar reply na mile to default message "Kuch masla hua..." show karein.
     const botReply =
       data?.candidates?.[0]?.content?.parts?.[0]?.text ||
       "Kuch masla hua, dobara try karein.";
+    // agar API reply de to use show karo, warna error message dikhao
 
-    // 👇 Bot ka reply chat UI mein dikhane ke liye ye function use ho raha hai.
     addBotMessage(botReply);
+    // bot ka reply UI me show kar diya
   } catch (error) {
-    // 👇 Agar koi error aata hai (API down ho, internet na ho, etc.)
-    // to "typing..." loader hata dete hain.
     hideTyping();
+    // error aane par typing indicator hata diya
 
-    // 👇 Chat mein error message show kar dete hain.
     addBotMessage("❌ Error aagaya. Internet ya API key check karein.");
+    // user ko error message dikha diya
 
-    // 👇 Console mein detailed error print kar dete hain (developer debugging ke liye).
     console.error("Error:", error);
+    // developer ke liye console me error print kiya
   }
 }
 
 // ✅ Enter ya Send button pe message bhejna
 sendBtn.addEventListener("click", sendMessage);
+// send button click hone par sendMessage() call hota hai
+
 chatInput.addEventListener("keypress", function (e) {
-  if (e.key === "Enter") sendMessage(); // yahan enter key selecet ki hai
+  if (e.key === "Enter") sendMessage();
+  // enter key press hone par bhi sendMessage() call hota hai
 });
 
 // 🧠 Voice Input Setup (SpeechRecognition)
-const SpeechRecognition = // yahan variable banaya hai
-  window.SpeechRecognition || window.webkitSpeechRecognition; /// ya voice ko text ma convert karta hai ya SpeechRecognition ya latest speech api hai browser ka  or ya wala webkitSpeechRecognition chrome or purane browser ma use hota hai
+const SpeechRecognition =
+  window.SpeechRecognition || window.webkitSpeechRecognition;
+// ye browser ki voice recognition API access karta hai (Chrome ke liye webkit prefix lagta hai)
+
 const recognition = SpeechRecognition ? new SpeechRecognition() : null;
+// agar support available hai to naya recognition object banaya gaya, warna null rakha gaya
 
 if (recognition) {
-  recognition.continuous = false; // ✅ Ek message par rok do
-  recognition.lang = "en-US"; // ✅ Aap chahein to "ur-PK" ya en-US bhi kar sakte hain
+  recognition.continuous = false;
+  // ek baar message sun kar stop kar dega
+
+  recognition.lang = "en-US";
+  // voice recognition ka language set kiya gaya (chahein to “ur-PK” bhi kar sakte ho)
+
   recognition.interimResults = false;
+  // sirf final result chahiye, beech ke partial results nahi
 
-  // ✅ Voice start hone par button active dikhao
   recognition.onstart = () => {
-    voiceBtn.classList.add("listening"); //voice start karen ga to ya class add hojaha gi
+    voiceBtn.classList.add("listening");
+    // mic button par active style lag jata hai jab recording start hoti hai
   };
 
-  // ✅ Voice band hone par button normal karo
   recognition.onend = () => {
-    voiceBtn.classList.remove("listening"); // or jab voice end hogi to class remove ho jahagi
+    voiceBtn.classList.remove("listening");
+    // mic button se active style remove ho jata hai jab recording khatam hoti hai
   };
 
-  // ✅ Jab voice se message mil jaye
   recognition.onresult = (event) => {
-    // jab voice text maconvert hogi to trigger kar dega
-    const transcript = event.results[0][0].transcript; // ya jo bi text aaha ga usko transcript variable ma store kare gi
-    chatInput.value = transcript; // jo text mila isko chatinput ma send kardega
-    sendMessage(); // direct send ho jaha ga msg
+    const transcript = event.results[0][0].transcript;
+    // voice se jo text mila usko variable me store kiya gaya
+
+    chatInput.value = transcript;
+    // text input box me daal diya gaya
+
+    sendMessage();
+    // aur message automatically send kar diya gaya
   };
 }
 
@@ -174,119 +232,166 @@ if (recognition) {
 voiceBtn.addEventListener("click", () => {
   if (recognition) {
     recognition.start();
+    // agar recognition support karta hai to mic start ho jata hai
   } else {
-    alert("❌ Voice recognition supported nahi hai is browser mein."); // agar browser ya device support nahi kare to alert dega
+    alert("❌ Voice recognition supported nahi hai is browser mein.");
+    // agar browser support nahi karta to alert dikhata hai
   }
 });
 
 // 🔊 Voice Output (SpeechSynthesis)
 function speakMessage(message) {
   if ("speechSynthesis" in window) {
-    const utterance = new SpeechSynthesisUtterance(message); // yaha hum jo bi reply aaha ga wo ya javascript ke object ki help se voice ma bi bole ga
-    utterance.lang = "en-US"; // ✅ Aap chahein to "ur-PK" ya en-US bhi kar sakte hain
-    //Ye ek JavaScript object hai jo ek "speech request" ko represent karta hai...
-    speechSynthesis.speak(utterance); // jo bi is variable ma hai voice ma batao
+    const utterance = new SpeechSynthesisUtterance(message);
+    // ye message ko speech me convert karta hai
+
+    utterance.lang = "en-US";
+    // speech ka language set kiya gaya
+
+    speechSynthesis.speak(utterance);
+    // browser ka speaker use karke message bolta hai
   }
 }
-// ------VOICE AND SPEECH RECOGNITION FUNCTIONALITY END HERE-----///
 
 // ------COLOR THEME PICKER FUNCTIONALITY START HERE-----///
-// 🎨 Color Picker - Short Version
 
 // Open/close color picker
 themeBtn.addEventListener("click", () => {
   colorPickerContainer.classList.add("active");
+  // color picker box ko visible kar diya gaya
+
   createOverlay();
+  // background overlay banayi gayi taake UX better lage
 });
 
 closeColorPicker.addEventListener("click", closeColorPickerFunc);
+// close button click hone par color picker close ho jata hai
 
 // Create overlay
 function createOverlay() {
   const overlay = document.createElement("div");
+  // overlay ke liye naya div banaya gaya
+
   overlay.className = "color-picker-overlay active";
+  // overlay ke design ke liye class di gayi
+
   overlay.id = "colorPickerOverlay";
+  // unique id set ki gayi
+
   document.body.appendChild(overlay);
+  // overlay ko page ke body me add kiya gaya
+
   overlay.addEventListener("click", closeColorPickerFunc);
+  // overlay click karne par color picker close ho jata hai
 }
 
 // Close color picker function
 function closeColorPickerFunc() {
   colorPickerContainer.classList.remove("active");
+  // color picker box ko hide kar diya gaya
+
   removeOverlay();
+  // overlay bhi remove kar diya gaya
 }
 
 // Remove overlay
 function removeOverlay() {
   const overlay = document.getElementById("colorPickerOverlay");
+  // overlay element select kiya gaya
   overlay?.remove();
+  // agar exist karta hai to remove kar diya gaya
 }
 
 // Color option selection
 colorOptions.forEach((option) => {
   option.addEventListener("click", () => {
     colorOptions.forEach((opt) => opt.classList.remove("active"));
+    // pehle sab options se "active" class hata do
+
     option.classList.add("active");
+    // click kiya gaya option active kar do
+
     customColor.value = option.dataset.color;
+    // aur uska color input box me set kar do
   });
 });
 
 // Custom color input
 customColor.addEventListener("input", () => {
   colorOptions.forEach((opt) => opt.classList.remove("active"));
+  // jab user manually color likhta hai to sab buttons inactive ho jate hain
 });
 
 // Apply color theme
 applyColor.addEventListener("click", () => {
   const selectedColor = customColor.value;
+  // selected color input se liya gaya
+
   applyTheme(selectedColor);
+  // theme apply karne ka function call kiya
+
   closeColorPickerFunc();
+  // picker close kar diya
+
   localStorage.setItem("chatbotTheme", selectedColor);
+  // selected color ko browser storage me save kar diya
 });
 
 // Apply theme to all elements
 function applyTheme(color) {
   currentThemeColor = color;
+  // global variable me new color store kiya gaya
 
-  // Update CSS variable
   document.documentElement.style.setProperty("--theme-color", color);
+  // CSS variable update kiya gaya new color se
 
-  // Create gradient color
   const gradientColor = `linear-gradient(135deg, ${color} 0%, ${adjustColor(
     color,
     20
   )} 100%)`;
+  // ek gradient banaya gaya base color se thoda bright version ke sath
 
-  // Update elements
   document.querySelector(".chat-header").style.background = gradientColor;
+  // chat header par new gradient apply kiya
 
   document
     .querySelectorAll(".btn, .feature, .apply-btn, .user-message")
     .forEach((el) => {
       el.style.background = gradientColor;
+      // buttons aur user message bubbles par bhi color apply kiya
     });
 
-  // Theme change message
   addBotMessage(`Theme changed to ${color}! 🎨`);
+  // bot user ko batata hai ke theme change ho gayi
 }
 
 // Adjust color brightness
 function adjustColor(color, percent) {
   const num = parseInt(color.replace("#", ""), 16);
+  // color code (# hata kar) number me convert kiya
+
   const amt = Math.round(2.55 * percent);
+  // brightness adjust karne ke liye value nikaali
 
   const R = Math.min(255, Math.max(0, (num >> 16) + amt));
   const G = Math.min(255, Math.max(0, ((num >> 8) & 0x00ff) + amt));
   const B = Math.min(255, Math.max(0, (num & 0x0000ff) + amt));
+  // red, green, blue channels adjust kiye color ko thoda bright banane ke liye
 
   return "#" + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
+  // new hex color return kiya gaya
 }
 
 // Load saved theme
 window.addEventListener("DOMContentLoaded", () => {
   const savedTheme = localStorage.getItem("chatbotTheme");
+  // local storage se saved color liya gaya
+
   if (savedTheme) {
     applyTheme(savedTheme);
+    // agar color mila to theme apply kar di gayi
+
     customColor.value = savedTheme;
+    // aur input box me bhi color show kar diya
   }
 });
