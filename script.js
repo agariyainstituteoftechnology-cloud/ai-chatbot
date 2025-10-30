@@ -8,6 +8,7 @@ const GEMINI_API_URL =
 const chatMessages = document.getElementById("chatMessages");
 const chatInput = document.getElementById("chatInput");
 const sendBtn = document.getElementById("sendBtn");
+const chatbotContainer = document.getElementById("chatbotContainer");
 const voiceBtn = document.getElementById("voiceBtn");
 const themeBtn = document.getElementById("themeBtn");
 const colorPickerContainer = document.getElementById("colorPickerContainer");
@@ -15,7 +16,6 @@ const closeColorPicker = document.getElementById("closeColorPicker");
 const applyColor = document.getElementById("applyColor");
 const customColor = document.getElementById("customColor");
 const colorOptions = document.querySelectorAll(".color-option");
-const chatbotContainer = document.getElementById("chatbotContainer");
 
 // ✅ Current theme color
 let currentThemeColor = "#6366f1";
@@ -188,126 +188,101 @@ function speakMessage(message) {
     speechSynthesis.speak(utterance); // jo bi is variable ma hai voice ma batao
   }
 }
+// ------VOICE AND SPEECH RECOGNITION FUNCTIONALITY END HERE-----///
 
-// 🎨 Color Picker Functionality
+// ------COLOR THEME PICKER FUNCTIONALITY START HERE-----///
+// 🎨 Color Picker - Short Version
+
+// Open/close color picker
 themeBtn.addEventListener("click", () => {
   colorPickerContainer.classList.add("active");
   createOverlay();
 });
 
-closeColorPicker.addEventListener("click", () => {
-  colorPickerContainer.classList.remove("active");
-  removeOverlay();
-});
+closeColorPicker.addEventListener("click", closeColorPickerFunc);
 
-// Create overlay when color picker is open
+// Create overlay
 function createOverlay() {
   const overlay = document.createElement("div");
   overlay.className = "color-picker-overlay active";
   overlay.id = "colorPickerOverlay";
   document.body.appendChild(overlay);
-
-  overlay.addEventListener("click", () => {
-    colorPickerContainer.classList.remove("active");
-    removeOverlay();
-  });
+  overlay.addEventListener("click", closeColorPickerFunc);
 }
 
-// Remove overlay when color picker is closed
+// Close color picker function
+function closeColorPickerFunc() {
+  colorPickerContainer.classList.remove("active");
+  removeOverlay();
+}
+
+// Remove overlay
 function removeOverlay() {
   const overlay = document.getElementById("colorPickerOverlay");
-  if (overlay) {
-    overlay.remove();
-  }
+  overlay?.remove();
 }
 
 // Color option selection
 colorOptions.forEach((option) => {
   option.addEventListener("click", () => {
-    // Remove active class from all options
     colorOptions.forEach((opt) => opt.classList.remove("active"));
-    // Add active class to clicked option
     option.classList.add("active");
-    // Update custom color input
     customColor.value = option.dataset.color;
   });
 });
 
-// Custom color selection
+// Custom color input
 customColor.addEventListener("input", () => {
-  // Remove active class from all predefined options
   colorOptions.forEach((opt) => opt.classList.remove("active"));
 });
 
-// Apply selected color theme
+// Apply color theme
 applyColor.addEventListener("click", () => {
   const selectedColor = customColor.value;
   applyTheme(selectedColor);
-  colorPickerContainer.classList.remove("active");
-  removeOverlay();
-
-  // Save theme to localStorage
+  closeColorPickerFunc();
   localStorage.setItem("chatbotTheme", selectedColor);
 });
 
-// Apply theme function
+// Apply theme to all elements
 function applyTheme(color) {
   currentThemeColor = color;
 
-  // Update CSS variables
+  // Update CSS variable
   document.documentElement.style.setProperty("--theme-color", color);
 
-  // Update header gradient
-  const chatHeader = document.querySelector(".chat-header");
-  chatHeader.style.background = `linear-gradient(135deg, ${color} 0%, ${adjustColor(
+  // Create gradient color
+  const gradientColor = `linear-gradient(135deg, ${color} 0%, ${adjustColor(
     color,
     20
   )} 100%)`;
 
-  // Update buttons
-  const buttons = document.querySelectorAll(".btn, .feature, .apply-btn");
-  buttons.forEach((btn) => {
-    btn.style.background = `linear-gradient(135deg, ${color} 0%, ${adjustColor(
-      color,
-      20
-    )} 100%)`;
-  });
+  // Update elements
+  document.querySelector(".chat-header").style.background = gradientColor;
 
-  // Update user messages
-  const userMessages = document.querySelectorAll(".user-message");
-  userMessages.forEach((msg) => {
-    msg.style.background = `linear-gradient(135deg, ${color} 0%, ${adjustColor(
-      color,
-      20
-    )} 100%)`;
-  });
+  document
+    .querySelectorAll(".btn, .feature, .apply-btn, .user-message")
+    .forEach((el) => {
+      el.style.background = gradientColor;
+    });
 
-  // Add a bot message about the theme change
+  // Theme change message
   addBotMessage(`Theme changed to ${color}! 🎨`);
 }
 
-// Helper function to adjust color brightness
+// Adjust color brightness
 function adjustColor(color, percent) {
   const num = parseInt(color.replace("#", ""), 16);
   const amt = Math.round(2.55 * percent);
-  const R = (num >> 16) + amt;
-  const G = ((num >> 8) & 0x00ff) + amt;
-  const B = (num & 0x0000ff) + amt;
 
-  return (
-    "#" +
-    (
-      0x1000000 +
-      (R < 255 ? (R < 1 ? 0 : R) : 255) * 0x10000 +
-      (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 +
-      (B < 255 ? (B < 1 ? 0 : B) : 255)
-    )
-      .toString(16)
-      .slice(1)
-  );
+  const R = Math.min(255, Math.max(0, (num >> 16) + amt));
+  const G = Math.min(255, Math.max(0, ((num >> 8) & 0x00ff) + amt));
+  const B = Math.min(255, Math.max(0, (num & 0x0000ff) + amt));
+
+  return "#" + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
 }
 
-// Load saved theme on page load
+// Load saved theme
 window.addEventListener("DOMContentLoaded", () => {
   const savedTheme = localStorage.getItem("chatbotTheme");
   if (savedTheme) {
